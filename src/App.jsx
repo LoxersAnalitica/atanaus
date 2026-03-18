@@ -499,6 +499,14 @@ function Gallery() {
             <img src="/assets/media__1773763542306.jpg" alt="Equipped Modern Kitchen" />
             <div className="gallery-item-caption">Fully Equipped Modern Kitchens</div>
           </div>
+          <div className="gallery-item">
+            <img src="/assets/media__1773853074127.jpg" alt="Spacious private terraces with pergola" />
+            <div className="gallery-item-caption">Beautiful Private Terraces</div>
+          </div>
+          <div className="gallery-item">
+            <img src="/assets/media__1773853074125.jpg" alt="Cozy outdoor dining area" />
+            <div className="gallery-item-caption">Outdoor Dining Areas</div>
+          </div>
         </div>
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
           <button onClick={scrollToContact} className="amoforms-action-btn" style={{
