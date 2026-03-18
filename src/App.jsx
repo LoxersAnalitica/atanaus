@@ -213,111 +213,154 @@ function Hero() {
     }
   }
 
-  return (
-    <section className="hero">
-      <img src="/assets/hero-cupula.jpg" alt="Atanaus Suites Tenerife" className="hero-bg" />
-      <div className="hero-overlay" style={{ background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.45) 70%, var(--bg-dark) 100%)' }}></div>
+  const contactFormJSX = (
+    <div className="glass-box">
+      <KommoStyles />
+      <h2 className="glass-box-title">Contact Us</h2>
+      <p className="glass-box-desc">Request Information</p>
 
-      <div className="container hero-content">
-        <div className="hero-text-area">
-          <h1 className="hero-h1">
-            Exclusivity and Comfort by the Sea:<br />
-            <span className="text-gold">Discover Atanaus Suites</span>
-          </h1>
-          <p className="hero-subtitle">
-            Your new home in the south of Tenerife, just 600 meters from the promenade.<br />
-            An exclusive residential complex of 55 properties located in Los Cristianos, one of the most established and sought-after areas on the island. A unique opportunity offering the perfect combination of tranquility, strategic location, and quality of life.
-          </p>
+      <div style={{ position: 'relative', minHeight: '280px' }}>
+        <div
+          style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: status === 'success' ? 1 : 0,
+            visibility: status === 'success' ? 'visible' : 'hidden',
+            transition: 'opacity 0.8s ease'
+          }}
+        >
+          <h3 style={{
+            color: 'var(--text-main)',
+            fontFamily: 'var(--font-serif)',
+            fontSize: '1.4rem',
+            textAlign: 'center',
+            lineHeight: '1.6'
+          }}>
+            Request sent successfully.<br />We will contact you shortly.
+          </h3>
         </div>
 
-        <div className="glass-box">
-          <KommoStyles />
-          <h2 className="glass-box-title">Contact Us</h2>
-          <p className="glass-box-desc">Request Information</p>
-
-          <div style={{ position: 'relative', minHeight: '280px' }}>
-            <div
-              style={{
-                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                opacity: status === 'success' ? 1 : 0,
-                visibility: status === 'success' ? 'visible' : 'hidden',
-                transition: 'opacity 0.8s ease'
-              }}
-            >
-              <h3 style={{
-                color: 'var(--text-main)',
-                fontFamily: 'var(--font-serif)',
-                fontSize: '1.4rem',
-                textAlign: 'center',
-                lineHeight: '1.6'
-              }}>
-                Request sent successfully.<br />We will contact you shortly.
-              </h3>
+        <form
+          className="amoforms-code-container"
+          style={{
+            opacity: status === 'success' ? 0 : 1,
+            visibility: status === 'success' ? 'hidden' : 'visible',
+            transition: 'opacity 0.5s ease'
+          }}
+          onSubmit={handleSubmit}
+        >
+          <div style={{ marginBottom: '15px' }}>
+            <label className="amoforms-label">Full Name</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              disabled={status === 'submitting'}
+              required
+            />
+          </div>
+          <div style={{ marginBottom: '15px' }}>
+            <label className="amoforms-label">Phone</label>
+            <div style={{ position: 'relative' }}>
+              <PhoneInput
+                international
+                defaultCountry="ES"
+                value={formData.phone}
+                onChange={handlePhoneChange}
+                disabled={status === 'submitting'}
+                required
+              />
             </div>
+            <p style={{ fontSize: '0.75rem', color: '#333', marginTop: '4px', fontStyle: 'italic', lineHeight: '1.2' }}>
+              * Please provide a valid number with WhatsApp. You will receive an immediate verification message.
+            </p>
+          </div>
+          <div style={{ marginBottom: '15px' }}>
+            <label className="amoforms-label">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              disabled={status === 'submitting'}
+              required
+            />
+          </div>
 
-            <form
-              className="amoforms-code-container"
-              style={{
-                opacity: status === 'success' ? 0 : 1,
-                visibility: status === 'success' ? 'hidden' : 'visible',
-                transition: 'opacity 0.5s ease'
-              }}
-              onSubmit={handleSubmit}
-            >
-              <div style={{ marginBottom: '15px' }}>
-                <label className="amoforms-label">Full Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  disabled={status === 'submitting'}
-                  required
-                />
-              </div>
-              <div style={{ marginBottom: '15px' }}>
-                <label className="amoforms-label">Phone</label>
-                <div style={{ position: 'relative' }}>
-                  <PhoneInput
-                    international
-                    defaultCountry="ES"
-                    value={formData.phone}
-                    onChange={handlePhoneChange}
-                    disabled={status === 'submitting'}
-                    required
-                  />
-                </div>
-                <p style={{ fontSize: '0.75rem', color: '#333', marginTop: '4px', fontStyle: 'italic', lineHeight: '1.2' }}>
-                  * Please provide a valid number with WhatsApp. You will receive an immediate verification message.
-                </p>
-              </div>
-              <div style={{ marginBottom: '15px' }}>
-                <label className="amoforms-label">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  disabled={status === 'submitting'}
-                  required
-                />
-              </div>
+          {status === 'error' && (
+            <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '15px' }}>
+              There was an error processing your request. Please try again.
+            </p>
+          )}
 
-              {status === 'error' && (
-                <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '15px' }}>
-                  There was an error processing your request. Please try again.
-                </p>
-              )}
+          <button type="submit" className="amoforms-action-btn" disabled={status === 'submitting'}>
+            {status === 'submitting' ? 'Sending...' : 'Contact Us'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
 
-              <button type="submit" className="amoforms-action-btn" disabled={status === 'submitting'}>
-                {status === 'submitting' ? 'Sending...' : 'Contact Us'}
+  return (
+    <>
+      <section className="hero">
+        <img src="/assets/hero-cupula.jpg" alt="Atanaus Suites Tenerife" className="hero-bg" />
+        <div className="hero-overlay" style={{ background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.45) 70%, var(--bg-dark) 100%)' }}></div>
+
+        <div className="container hero-content">
+          <div className="hero-text-area">
+            <h1 className="hero-h1">
+              Exclusivity and Comfort by the Sea:<br />
+              <span className="text-gold">Discover Atanaus Suites in Tenerife</span>
+            </h1>
+            <div className="mobile-only" style={{ marginTop: '2rem' }}>
+              <button
+                onClick={() => document.getElementById('mobile-contact-form')?.scrollIntoView({ behavior: 'smooth' })}
+                className="amoforms-action-btn"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 30px',
+                  backgroundColor: 'transparent',
+                  border: '1px solid var(--accent-gold)',
+                  color: 'var(--accent-gold)'
+                }}>
+                Request Information
               </button>
-            </form>
+            </div>
+          </div>
+
+          <div className="desktop-only">
+            {contactFormJSX}
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Unified Flow: Gallery immediately after Banner */}
+      <Gallery />
+
+      {/* Description and Form Section for Mobile/Desktop Unified read */}
+      <section id="mobile-contact-form" style={{ backgroundColor: '#F9F8F6', padding: '5rem 1.5rem', borderTop: '1px solid var(--border-color)' }}>
+        <div className="container">
+          <p style={{
+            fontFamily: 'var(--font-sans)',
+            color: 'var(--text-main)',
+            fontSize: '1.2rem',
+            textAlign: 'center',
+            maxWidth: '800px',
+            margin: '0 auto 3rem auto',
+            lineHeight: '1.7',
+            fontWeight: '300'
+          }}>
+            Your new home in the south of Tenerife, just 600 meters from the promenade.<br /><br />
+            An exclusive residential complex of 55 properties located in Los Cristianos, one of the most established and sought-after areas on the island. A unique opportunity offering the perfect combination of tranquility, strategic location, and quality of life.
+          </p>
+          <div className="mobile-only" style={{ maxWidth: '500px', margin: '0 auto' }}>
+            {contactFormJSX}
+          </div>
+        </div>
+      </section>
+    </>
   )
 }
 
@@ -749,7 +792,6 @@ export default function App() {
         <Hero />
         <Benefits />
         <ValueAdd />
-        <Gallery />
       </main>
       <Footer />
       <WhatsAppButton />
