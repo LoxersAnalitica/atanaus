@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import CookieConsent from 'react-cookie-consent'
+import CookieConsent, { getCookieConsentValue } from 'react-cookie-consent'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import './index.css'
@@ -767,7 +767,22 @@ export default function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname)
   const [isDossierOpen, setIsDossierOpen] = useState(false)
 
+  const grantGoogleConsent = () => {
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag('consent', 'update', {
+        'ad_storage': 'granted',
+        'ad_user_data': 'granted',
+        'ad_personalization': 'granted',
+        'analytics_storage': 'granted'
+      });
+    }
+  }
+
   useEffect(() => {
+    if (getCookieConsentValue("atanaus-cookie-consent") === "true") {
+      grantGoogleConsent();
+    }
+
     const handleLocationChange = () => setCurrentPath(window.location.pathname)
     window.addEventListener('popstate', handleLocationChange)
     return () => window.removeEventListener('popstate', handleLocationChange)
@@ -792,6 +807,7 @@ export default function App() {
         location="bottom"
         buttonText="I Understand"
         cookieName="atanaus-cookie-consent"
+        onAccept={grantGoogleConsent}
         style={{ background: "#272522", color: "#F9F8F6", fontFamily: "var(--font-sans)", fontSize: "14px" }}
         buttonStyle={{ backgroundColor: "#C5A880", color: "#fff", fontSize: "12px", borderRadius: "2px", fontWeight: "bold", textTransform: "uppercase", padding: "10px 20px" }}
         expires={150}
