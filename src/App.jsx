@@ -205,6 +205,9 @@ function Hero() {
 
       if (response.ok) {
         setStatus('success')
+        if (window.fbq) {
+          window.fbq('track', 'Lead');
+        }
       } else {
         setStatus('error')
       }
@@ -557,6 +560,11 @@ function WhatsAppButton() {
       rel="noopener noreferrer"
       aria-label="Contact via WhatsApp"
       className={`whatsapp-float ${visible ? 'visible' : ''}`}
+      onClick={() => {
+        if (window.fbq) {
+          window.fbq('track', 'Lead');
+        }
+      }}
     >
       <WhatsAppIcon />
     </a>
@@ -648,6 +656,9 @@ function DossierModal({ isOpen, onClose }) {
 
       if (response.ok) {
         setStatus('success')
+        if (window.fbq) {
+          window.fbq('track', 'Lead');
+        }
         setTimeout(() => {
           onClose()
           setStatus('idle')
