@@ -222,18 +222,19 @@ button {
 
 /* Glassmorphism Form Box - Light Theme */
 .glass-box {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.90);
+  /* Light background */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-color);
-  padding: 3rem 2.5rem;
-  border-radius: 4px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  padding: clamp(25px, 5vw, 40px);
+  border-radius: 8px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  width: 100%;
 }
 
 .glass-box-title {
   font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-size: clamp(1.3rem, 4vw, 1.5rem);
   color: var(--text-main);
   margin-bottom: 1rem;
   text-align: center;

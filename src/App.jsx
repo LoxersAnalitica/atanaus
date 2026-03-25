@@ -142,7 +142,7 @@ const KommoStyles = () => (
       outline: none !important;
     }
     .amoforms-label {
-      color: #666 !important;
+      color: #333 !important;
       font-family: 'Inter', sans-serif !important;
       font-size: 11px !important;
       text-transform: uppercase !important;
@@ -172,6 +172,7 @@ const KommoStyles = () => (
 function Hero() {
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' })
   const [status, setStatus] = useState('idle')
+  const [formStep, setFormStep] = useState(1)
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -219,7 +220,7 @@ function Hero() {
   const contactFormJSX = (
     <div className="glass-box">
       <KommoStyles />
-      <h2 className="glass-box-title">Contact Us</h2>
+      <h2 className="glass-box-title">Check Availability</h2>
       <p className="glass-box-desc">Request Information</p>
 
       <div style={{ position: 'relative', minHeight: '280px' }}>
@@ -252,54 +253,88 @@ function Hero() {
           }}
           onSubmit={handleSubmit}
         >
-          <div style={{ marginBottom: '15px' }}>
-            <label className="amoforms-label">Full Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              disabled={status === 'submitting'}
-              required
-            />
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label className="amoforms-label">Phone</label>
-            <div style={{ position: 'relative' }}>
-              <PhoneInput
-                international
-                defaultCountry="ES"
-                value={formData.phone}
-                onChange={handlePhoneChange}
+          {formStep === 1 && (
+            <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
+              <label className="amoforms-label">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
                 disabled={status === 'submitting'}
+                placeholder="Enter your email"
                 required
               />
+              <button
+                type="button"
+                className="amoforms-action-btn"
+                onClick={() => {
+                  if (formData.email && formData.email.includes('@')) setFormStep(2)
+                  else alert('Please enter a valid email address.')
+                }}
+                style={{ marginTop: '15px' }}
+              >
+                Check Availability
+              </button>
             </div>
-            <p style={{ fontSize: '0.75rem', color: '#333', marginTop: '4px', fontStyle: 'italic', lineHeight: '1.2' }}>
-              * Please provide a valid number with WhatsApp. You will receive an immediate verification message.
-            </p>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label className="amoforms-label">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              disabled={status === 'submitting'}
-              required
-            />
-          </div>
-
-          {status === 'error' && (
-            <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '15px' }}>
-              There was an error processing your request. Please try again.
-            </p>
           )}
 
-          <button type="submit" className="amoforms-action-btn" disabled={status === 'submitting'}>
-            {status === 'submitting' ? 'Sending...' : 'Contact Us'}
-          </button>
+          {formStep === 2 && (
+            <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
+              <label className="amoforms-label">Phone</label>
+              <div style={{ position: 'relative' }}>
+                <PhoneInput
+                  international
+                  defaultCountry="ES"
+                  value={formData.phone}
+                  onChange={handlePhoneChange}
+                  disabled={status === 'submitting'}
+                  required
+                />
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#333', marginTop: '4px', fontStyle: 'italic', lineHeight: '1.2' }}>
+                * Please provide a valid number with WhatsApp. You will receive an immediate verification message.
+              </p>
+              <button
+                type="button"
+                className="amoforms-action-btn"
+                onClick={() => {
+                  if (formData.phone && formData.phone.length > 8) setFormStep(3)
+                  else alert('Please enter a valid phone number.')
+                }}
+                style={{ marginTop: '15px' }}
+              >
+                Continue
+              </button>
+              <button type="button" onClick={() => setFormStep(1)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+            </div>
+          )}
+
+          {formStep === 3 && (
+            <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
+              <label className="amoforms-label">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                disabled={status === 'submitting'}
+                placeholder="Enter your full name"
+                required
+              />
+
+              {status === 'error' && (
+                <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '15px', marginTop: '10px' }}>
+                  There was an error processing your request. Please try again.
+                </p>
+              )}
+
+              <button type="submit" className="amoforms-action-btn" disabled={status === 'submitting'} style={{ marginTop: '15px' }}>
+                {status === 'submitting' ? 'Sending...' : 'Check Availability'}
+              </button>
+              <button type="button" onClick={() => setFormStep(2)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+            </div>
+          )}
         </form>
       </div>
     </div>
@@ -313,22 +348,46 @@ function Hero() {
 
         <div className="container hero-content">
           <div className="hero-text-area">
-            <h1 className="hero-h1">
-              Exclusivity and Comfort by the Sea:<br />
-              <span className="text-gold">Discover Atanaus Suites in Tenerife</span>
-            </h1>
-            <div className="mobile-only" style={{ marginTop: '2rem' }}>
+            <div style={{ marginBottom: '1.5rem', animation: 'fadeInUp 1s ease-out' }}>
+              <span style={{
+                backgroundColor: 'rgba(39, 37, 34, 0.8)',
+                backdropFilter: 'blur(5px)',
+                color: '#fff',
+                padding: '8px 16px',
+                borderRadius: '50px',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                display: 'inline-block',
+                marginBottom: '1.5rem',
+                border: '1px solid var(--accent-gold)'
+              }}>
+                <span style={{ display: 'inline-block', width: '8px', height: '8px', backgroundColor: '#e74c3c', borderRadius: '50%', marginRight: '8px', animation: 'pulse 2s infinite' }}></span>
+                Only 15 left
+              </span>
+              <h1 className="hero-h1" style={{ marginBottom: '0.5rem', lineHeight: '1.2' }}>
+                Discover Atanaus Suites in Tenerife<br />
+                <span className="text-gold" style={{ fontSize: '1.2em', fontWeight: '700', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>From 340.000 €</span>
+              </h1>
+            </div>
+
+            <div className="mobile-only" style={{ marginTop: '1rem' }}>
               <button
                 onClick={() => document.getElementById('mobile-contact-form')?.scrollIntoView({ behavior: 'smooth' })}
                 className="amoforms-action-btn"
                 style={{
                   display: 'inline-block',
-                  padding: '12px 30px',
-                  backgroundColor: 'transparent',
-                  border: '1px solid var(--accent-gold)',
-                  color: 'var(--accent-gold)'
+                  padding: '16px 30px',
+                  backgroundColor: 'var(--accent-gold)',
+                  border: 'none',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  fontSize: '1.1rem',
+                  boxShadow: '0 8px 20px rgba(197, 168, 128, 0.4)',
+                  borderRadius: '4px'
                 }}>
-                Request Information
+                Get Prices & Floor Plans
               </button>
             </div>
           </div>
@@ -402,7 +461,7 @@ function Benefits() {
         <button onClick={scrollToContact} className="amoforms-action-btn" style={{
           display: 'inline-block', width: 'auto', padding: '15px 40px', backgroundColor: 'var(--text-main)'
         }}>
-          Contact Us
+          Check Availability
         </button>
       </div>
     </section>
@@ -462,7 +521,7 @@ function ValueAdd() {
               <button onClick={scrollToContact} className="amoforms-action-btn" style={{
                 display: 'inline-block', width: 'auto', padding: '12px 30px', backgroundColor: 'var(--accent-gold)'
               }}>
-                Contact Us
+                Check Availability
               </button>
             </div>
           </div>
@@ -512,7 +571,7 @@ function Gallery() {
           <button onClick={scrollToContact} className="amoforms-action-btn" style={{
             display: 'inline-block', width: 'auto', padding: '15px 40px', backgroundColor: 'var(--text-main)'
           }}>
-            Contact Us
+            Check Availability
           </button>
         </div>
       </div>
