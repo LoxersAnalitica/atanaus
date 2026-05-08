@@ -32,12 +32,22 @@ export default async function handler(req, res) {
         const isDossier = data.name === 'Dossier Request (Atanaus)';
         const targetStatusId = isDossier ? 103045087 : 103034083; // 103045087 = 'Correo', 103034083 = 'Contacto inicial'
 
+        // Build tags array
+        const tags = [];
+        if (data.source) {
+            tags.push({ "name": data.source });
+        }
+        if (data.travelPlan) {
+            tags.push({ "name": data.travelPlan });
+        }
+
         const kommoPayload = [
             {
                 "name": "Lead Off-Market - " + data.name,
                 "pipeline_id": 13358703,
                 "status_id": targetStatusId,
                 "_embedded": {
+                    "tags": tags.length > 0 ? tags : undefined,
                     "contacts": [
                         {
                             "name": data.name,
@@ -95,6 +105,30 @@ export default async function handler(req, res) {
         ]);
 
         if (kommoResponse.ok || kommoResponse.status === 200 || kommoResponse.status === 201) {
+            // Add a note with travel plan and source info
+            try {
+                const kommoData = await kommoResponse.json();
+                const leadId = kommoData?.[0]?.id;
+                if (leadId && (data.travelPlan || data.source)) {
+                    const noteLines = [];
+                    if (data.travelPlan) noteLines.push(`📅 Travel Plan: ${data.travelPlan}`);
+                    if (data.source) noteLines.push(`📣 Lead Source: ${data.source}`);
+                    const notePayload = [{
+                        "note_type": "common",
+                        "params": { "text": noteLines.join('\n') }
+                    }];
+                    await fetch(`https://pedropablocastro1995.kommo.com/api/v4/leads/${leadId}/notes`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImJhMTc1YjFlY2RjMGRhZGE1OGNjNTNiNTFhMDBlYjIyMzk4YmI0NDA3NjQwM2M4MTEzZDU5OTE3NWE5ZWJjYjZlMzQ3N2ZlMmVlOWJmOTRmIn0.eyJhdWQiOiIzOWU2YmMzMS1mMmJhLTRhMmUtOGRjMC1kZjBjMWUxNTQ0ZTUiLCJqdGkiOiJiYTE3NWIxZWNkYzBkYWRhNThjYzUzYjUxYTAwZWIyMjM5OGJiNDQwNzY0MDNjODExM2Q1OTkxNzVhOWViY2I2ZTM0NzdmZTJlZTliZjk0ZiIsImlhdCI6MTc3Mzc2NDMxMiwibmJmIjoxNzczNzY0MzEyLCJleHAiOjE5MDY0MTYwMDAsInN1YiI6IjE0OTE2Mzk1IiwiZ3JhbnRfdHlwZSI6IiIsImFjY291bnRfaWQiOjM2MTczNzExLCJiYXNlX2RvbWFpbiI6ImtvbW1vLmNvbSIsInZlcnNpb24iOjIsInNjb3BlcyI6WyJwdXNoX25vdGlmaWNhdGlvbnMiLCJmaWxlcyIsImNybSIsImZpbGVzX2RlbGV0ZSIsIm5vdGlmaWNhdGlvbnMiXSwiaGFzaF91dWlkIjoiMzI5ODlhYTAtZWRlNC00ZGY5LThlMDQtNzZiMDQzMzUwYTU4IiwiYXBpX2RvbWFpbiI6ImFwaS1jLmtvbW1vLmNvbSJ9.n-ESKadlEYmJy45zaDyDgTRv3w1FN1zwRihWf_90o6om7d-7Y7YrsyX5X4kkHRNQaoB4fw_XHu4P40S-Ayouxe7zcaqAPklSL8BNMNGB6gxpQ2TGgoJ560Rcdxc0404NEgL2ntITbEYGUHt9jGyf_PByhStZakiYHkcDX1KSrygwQk-X3dk3p7aWoL2nerZIITbHAIGBgHr5n9uCQgJHADczEsuek4_-u8hevgzpDXajGzsXy59KUpzxHgKvj0AyXHS-vku7yWp9v5rmAx-V8fa5I-Frui80Nqwn8mb2I5KZTOuJ67LIzEibTy0izpQNPtK7HQPawPGGCjUUK3IAcw`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(notePayload)
+                    }).catch(err => console.error('Note creation warning (non-fatal):', err));
+                }
+            } catch (noteErr) {
+                console.error('Note parsing warning (non-fatal):', noteErr);
+            }
             return res.status(200).json({ success: true });
         } else {
             const errText = await kommoResponse.text();

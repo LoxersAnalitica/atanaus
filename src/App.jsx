@@ -170,9 +170,23 @@ const KommoStyles = () => (
 )
 
 function Hero() {
-  const [formData, setFormData] = useState({ name: '', phone: '', email: '' })
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '', travelPlan: '' })
   const [status, setStatus] = useState('idle')
   const [formStep, setFormStep] = useState(1)
+
+  // Detect lead source from URL params
+  const getLeadSource = () => {
+    const params = new URLSearchParams(window.location.search)
+    const utmSource = (params.get('utm_source') || '').toLowerCase()
+    const utmMedium = (params.get('utm_medium') || '').toLowerCase()
+    const gclid = params.get('gclid')
+    const fbclid = params.get('fbclid')
+    if (gclid || utmSource === 'google' || utmSource === 'adwords') return 'Google Ads'
+    if (fbclid || utmSource === 'facebook' || utmSource === 'instagram' || utmSource === 'meta' || utmSource === 'fb' || utmSource === 'ig') return 'Meta Ads'
+    if (utmMedium === 'cpc' || utmMedium === 'ppc') return utmSource ? utmSource + ' (paid)' : 'Paid'
+    if (utmSource) return utmSource
+    return 'Direct / Organic'
+  }
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -184,7 +198,7 @@ function Hero() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.name || !formData.phone || !formData.email) {
+    if (!formData.name || !formData.phone || !formData.email || !formData.travelPlan) {
       alert("Please fill all fields to request information.")
       return
     }
@@ -200,7 +214,9 @@ function Hero() {
         body: JSON.stringify({
           name: formData.name,
           phone: formData.phone,
-          email: formData.email
+          email: formData.email,
+          travelPlan: formData.travelPlan,
+          source: getLeadSource()
         })
       })
 
@@ -323,16 +339,70 @@ function Hero() {
                 required
               />
 
+              <button
+                type="button"
+                className="amoforms-action-btn"
+                onClick={() => {
+                  if (formData.name && formData.name.trim().length > 1) setFormStep(4)
+                  else alert('Please enter your full name.')
+                }}
+                style={{ marginTop: '15px' }}
+              >
+                Continue
+              </button>
+              <button type="button" onClick={() => setFormStep(2)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+            </div>
+          )}
+
+          {formStep === 4 && (
+            <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
+              <label className="amoforms-label">When do you plan to come to Tenerife?</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                {[
+                  { value: 'Already in Tenerife', label: "I'm already in Tenerife" },
+                  { value: 'Less than 3 months', label: 'In less than 3 months' },
+                  { value: 'More than 3 months', label: 'More than 3 months' }
+                ].map((option) => (
+                  <label
+                    key={option.value}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '14px 14px',
+                      border: formData.travelPlan === option.value ? '2px solid #C5A880' : '1px solid rgba(0,0,0,0.1)',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      backgroundColor: formData.travelPlan === option.value ? 'rgba(197,168,128,0.08)' : '#fff',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'Inter, sans-serif',
+                      fontSize: '14px',
+                      color: '#333'
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="travelPlan"
+                      value={option.value}
+                      checked={formData.travelPlan === option.value}
+                      onChange={handleInputChange}
+                      style={{ accentColor: '#C5A880', width: '18px', height: '18px' }}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+
               {status === 'error' && (
                 <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '15px', marginTop: '10px' }}>
                   There was an error processing your request. Please try again.
                 </p>
               )}
 
-              <button type="submit" className="amoforms-action-btn" disabled={status === 'submitting'} style={{ marginTop: '15px' }}>
+              <button type="submit" className="amoforms-action-btn" disabled={status === 'submitting' || !formData.travelPlan} style={{ marginTop: '15px', opacity: formData.travelPlan ? 1 : 0.5 }}>
                 {status === 'submitting' ? 'Sending...' : 'Check Availability'}
               </button>
-              <button type="button" onClick={() => setFormStep(2)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+              <button type="button" onClick={() => setFormStep(3)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
             </div>
           )}
         </form>
@@ -364,7 +434,7 @@ function Hero() {
                 border: '1px solid var(--accent-gold)'
               }}>
                 <span style={{ display: 'inline-block', width: '8px', height: '8px', backgroundColor: '#e74c3c', borderRadius: '50%', marginRight: '8px', animation: 'pulse 2s infinite' }}></span>
-                Only 15 left
+                Only 9 left
               </span>
               <h1 className="hero-h1" style={{ marginBottom: '0.5rem', lineHeight: '1.2' }}>
                 Discover Atanaus Suites in Tenerife<br />
