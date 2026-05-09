@@ -40,6 +40,13 @@ export default async function handler(req, res) {
         if (data.travelPlan) {
             tags.push({ "name": data.travelPlan });
         }
+        // Add campaign/ad name as tag for quick filtering
+        if (data.utmCampaign) {
+            tags.push({ "name": `Campaign: ${data.utmCampaign}` });
+        }
+        if (data.utmContent) {
+            tags.push({ "name": `Ad: ${data.utmContent}` });
+        }
 
         const kommoPayload = [
             {
@@ -109,10 +116,17 @@ export default async function handler(req, res) {
             try {
                 const kommoData = await kommoResponse.json();
                 const leadId = kommoData?.[0]?.id;
-                if (leadId && (data.travelPlan || data.source)) {
+                if (leadId && (data.travelPlan || data.source || data.utmCampaign)) {
                     const noteLines = [];
                     if (data.travelPlan) noteLines.push(`📅 Travel Plan: ${data.travelPlan}`);
                     if (data.source) noteLines.push(`📣 Lead Source: ${data.source}`);
+                    if (data.utmCampaign) noteLines.push(`🎯 Campaign: ${data.utmCampaign}`);
+                    if (data.utmContent) noteLines.push(`📝 Ad/Creative: ${data.utmContent}`);
+                    if (data.utmTerm) noteLines.push(`🔑 Keyword/Adset: ${data.utmTerm}`);
+                    if (data.utmSource) noteLines.push(`🌐 UTM Source: ${data.utmSource}`);
+                    if (data.utmMedium) noteLines.push(`📡 UTM Medium: ${data.utmMedium}`);
+                    if (data.gclid) noteLines.push(`🔗 GCLID: ${data.gclid}`);
+                    if (data.fbclid) noteLines.push(`🔗 FBCLID: ${data.fbclid}`);
                     const notePayload = [{
                         "note_type": "common",
                         "params": { "text": noteLines.join('\n') }

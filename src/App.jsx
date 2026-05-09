@@ -174,18 +174,33 @@ function Hero() {
   const [status, setStatus] = useState('idle')
   const [formStep, setFormStep] = useState(1)
 
-  // Detect lead source from URL params
+  // Detect lead source and full UTM details from URL params
   const getLeadSource = () => {
     const params = new URLSearchParams(window.location.search)
     const utmSource = (params.get('utm_source') || '').toLowerCase()
     const utmMedium = (params.get('utm_medium') || '').toLowerCase()
+    const utmCampaign = params.get('utm_campaign') || ''
+    const utmContent = params.get('utm_content') || ''
+    const utmTerm = params.get('utm_term') || ''
     const gclid = params.get('gclid')
     const fbclid = params.get('fbclid')
-    if (gclid || utmSource === 'google' || utmSource === 'adwords') return 'Google Ads'
-    if (fbclid || utmSource === 'facebook' || utmSource === 'instagram' || utmSource === 'meta' || utmSource === 'fb' || utmSource === 'ig') return 'Meta Ads'
-    if (utmMedium === 'cpc' || utmMedium === 'ppc') return utmSource ? utmSource + ' (paid)' : 'Paid'
-    if (utmSource) return utmSource
-    return 'Direct / Organic'
+
+    let sourceName = 'Direct / Organic'
+    if (gclid || utmSource === 'google' || utmSource === 'adwords') sourceName = 'Google Ads'
+    else if (fbclid || utmSource === 'facebook' || utmSource === 'instagram' || utmSource === 'meta' || utmSource === 'fb' || utmSource === 'ig') sourceName = 'Meta Ads'
+    else if (utmMedium === 'cpc' || utmMedium === 'ppc') sourceName = utmSource ? utmSource + ' (paid)' : 'Paid'
+    else if (utmSource) sourceName = utmSource
+
+    return {
+      sourceName,
+      utmCampaign,
+      utmContent,
+      utmTerm,
+      utmSource,
+      utmMedium,
+      gclid: gclid || '',
+      fbclid: fbclid || ''
+    }
   }
 
   const handleInputChange = (e) => {
@@ -206,6 +221,7 @@ function Hero() {
     setStatus('submitting')
 
     try {
+      const leadSource = getLeadSource()
       const response = await fetch('/api/kommo', {
         method: 'POST',
         headers: {
@@ -216,7 +232,14 @@ function Hero() {
           phone: formData.phone,
           email: formData.email,
           travelPlan: formData.travelPlan,
-          source: getLeadSource()
+          source: leadSource.sourceName,
+          utmCampaign: leadSource.utmCampaign,
+          utmContent: leadSource.utmContent,
+          utmTerm: leadSource.utmTerm,
+          utmSource: leadSource.utmSource,
+          utmMedium: leadSource.utmMedium,
+          gclid: leadSource.gclid,
+          fbclid: leadSource.fbclid
         })
       })
 
