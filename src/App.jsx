@@ -40,12 +40,15 @@ const CheckCircleIcon = () => (
 
 /* ─── Global Scroll to Contact Function ──────────────────────── */
 const scrollToContact = () => {
-  const heroSection = document.querySelector('.hero');
-  if (heroSection) {
-    heroSection.scrollIntoView({ behavior: 'smooth' });
-    // Focus the first input field slightly after scrolling
+  // On mobile, scroll to the mobile form section; on desktop, scroll to the hero (where the form is)
+  const isMobile = window.innerWidth <= 900;
+  const target = isMobile
+    ? document.getElementById('mobile-contact-form')
+    : document.querySelector('.hero');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth' });
     setTimeout(() => {
-      const firstInput = document.querySelector('input[name="name"]');
+      const firstInput = target.querySelector('input[type="email"]') || target.querySelector('input[name="name"]');
       if (firstInput) firstInput.focus();
     }, 500);
   }
@@ -170,7 +173,7 @@ const KommoStyles = () => (
 )
 
 function Hero() {
-  const [formData, setFormData] = useState({ name: '', phone: '', email: '', travelPlan: '' })
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '', budget: '', travelPlan: '' })
   const [status, setStatus] = useState('idle')
   const [formStep, setFormStep] = useState(1)
 
@@ -213,7 +216,7 @@ function Hero() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.name || !formData.phone || !formData.email || !formData.travelPlan) {
+    if (!formData.name || !formData.phone || !formData.email || !formData.budget || !formData.travelPlan) {
       alert("Please fill all fields to request information.")
       return
     }
@@ -231,6 +234,7 @@ function Hero() {
           name: formData.name,
           phone: formData.phone,
           email: formData.email,
+          budget: formData.budget,
           travelPlan: formData.travelPlan,
           source: leadSource.sourceName,
           utmCampaign: leadSource.utmCampaign,
@@ -320,6 +324,89 @@ function Hero() {
 
           {formStep === 2 && (
             <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
+              <label className="amoforms-label">What is your approximate budget?</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                {[
+                  { value: 'Below €350,000', label: 'Below €350,000' },
+                  { value: '€350,000 - €500,000', label: '€350,000 – €500,000' },
+                  { value: 'Above €500,000', label: 'Above €500,000' }
+                ].map((option) => (
+                  <label
+                    key={option.value}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '14px 14px',
+                      border: formData.budget === option.value ? '2px solid #C5A880' : '1px solid rgba(0,0,0,0.1)',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      backgroundColor: formData.budget === option.value ? 'rgba(197,168,128,0.08)' : '#fff',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'Inter, sans-serif',
+                      fontSize: '14px',
+                      color: '#333'
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="budget"
+                      value={option.value}
+                      checked={formData.budget === option.value}
+                      onChange={handleInputChange}
+                      style={{ accentColor: '#C5A880', width: '18px', height: '18px' }}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="amoforms-action-btn"
+                onClick={() => {
+                  if (!formData.budget) {
+                    alert('Please select your approximate budget.')
+                    return
+                  }
+                  if (formData.budget === 'Below €350,000') {
+                    setFormStep('low-budget')
+                  } else {
+                    setFormStep(3)
+                  }
+                }}
+                style={{ marginTop: '15px', opacity: formData.budget ? 1 : 0.5 }}
+                disabled={!formData.budget}
+              >
+                Continue
+              </button>
+              <button type="button" onClick={() => setFormStep(1)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+            </div>
+          )}
+
+          {formStep === 'low-budget' && (
+            <div className="budget-warning">
+              <div className="budget-warning-icon">🏠</div>
+              <h3 className="budget-warning-title">
+                We currently don't have available properties in this price range.
+              </h3>
+              <p className="budget-warning-text">
+                However, you can still reach out to us for future opportunities or alternative options.
+              </p>
+              <a
+                href="https://wa.me/34919934639?text=Hello,%20I%20would%20like%20to%20request%20information%20about%20Atanaus%20Suites.%20My%20budget%20is%20below%20%E2%82%AC350,000."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="budget-warning-whatsapp"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                Contact Us Anyway
+              </a>
+              <button type="button" onClick={() => setFormStep(2)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '15px', width: '100%', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.85rem' }}>Change Budget</button>
+            </div>
+          )}
+
+          {formStep === 3 && (
+            <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
               <label className="amoforms-label">Phone</label>
               <div style={{ position: 'relative' }}>
                 <PhoneInput
@@ -338,18 +425,18 @@ function Hero() {
                 type="button"
                 className="amoforms-action-btn"
                 onClick={() => {
-                  if (formData.phone && formData.phone.length > 8) setFormStep(3)
+                  if (formData.phone && formData.phone.length > 8) setFormStep(4)
                   else alert('Please enter a valid phone number.')
                 }}
                 style={{ marginTop: '15px' }}
               >
                 Continue
               </button>
-              <button type="button" onClick={() => setFormStep(1)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+              <button type="button" onClick={() => setFormStep(2)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
             </div>
           )}
 
-          {formStep === 3 && (
+          {formStep === 4 && (
             <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
               <label className="amoforms-label">Full Name</label>
               <input
@@ -366,18 +453,18 @@ function Hero() {
                 type="button"
                 className="amoforms-action-btn"
                 onClick={() => {
-                  if (formData.name && formData.name.trim().length > 1) setFormStep(4)
+                  if (formData.name && formData.name.trim().length > 1) setFormStep(5)
                   else alert('Please enter your full name.')
                 }}
                 style={{ marginTop: '15px' }}
               >
                 Continue
               </button>
-              <button type="button" onClick={() => setFormStep(2)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+              <button type="button" onClick={() => setFormStep(3)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
             </div>
           )}
 
-          {formStep === 4 && (
+          {formStep === 5 && (
             <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
               <label className="amoforms-label">When do you plan to come to Tenerife?</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
@@ -425,7 +512,7 @@ function Hero() {
               <button type="submit" className="amoforms-action-btn" disabled={status === 'submitting' || !formData.travelPlan} style={{ marginTop: '15px', opacity: formData.travelPlan ? 1 : 0.5 }}>
                 {status === 'submitting' ? 'Sending...' : 'Check Availability'}
               </button>
-              <button type="button" onClick={() => setFormStep(3)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+              <button type="button" onClick={() => setFormStep(4)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
             </div>
           )}
         </form>
@@ -467,7 +554,7 @@ function Hero() {
 
             <div className="mobile-only" style={{ marginTop: '1rem' }}>
               <button
-                onClick={() => document.getElementById('mobile-contact-form')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('description-prices')?.scrollIntoView({ behavior: 'smooth' })}
                 className="amoforms-action-btn"
                 style={{
                   display: 'inline-block',
@@ -494,8 +581,8 @@ function Hero() {
       {/* Unified Flow: Gallery immediately after Banner */}
       <Gallery />
 
-      {/* Description and Form Section for Mobile/Desktop Unified read */}
-      <section id="mobile-contact-form" style={{ backgroundColor: '#F9F8F6', padding: '5rem 1.5rem', borderTop: '1px solid var(--border-color)' }}>
+      {/* Description Section */}
+      <section id="description-prices" style={{ backgroundColor: '#F9F8F6', padding: '5rem 1.5rem 3rem', borderTop: '1px solid var(--border-color)' }}>
         <div className="container">
           <p style={{
             fontFamily: 'var(--font-sans)',
@@ -503,13 +590,22 @@ function Hero() {
             fontSize: '1.2rem',
             textAlign: 'center',
             maxWidth: '800px',
-            margin: '0 auto 3rem auto',
+            margin: '0 auto',
             lineHeight: '1.7',
             fontWeight: '300'
           }}>
             Your new home in the south of Tenerife, just 600 meters from the promenade.<br /><br />
             An exclusive residential complex of 55 properties located in Los Cristianos, one of the most established and sought-after areas on the island. A unique opportunity offering the perfect combination of tranquility, strategic location, and quality of life.
           </p>
+        </div>
+      </section>
+
+      {/* Price List - right after description */}
+      <PriceList />
+
+      {/* Mobile Contact Form - after price list */}
+      <section id="mobile-contact-form" style={{ backgroundColor: '#F9F8F6', padding: '4rem 1.5rem', borderTop: '1px solid var(--border-color)' }}>
+        <div className="container">
           <div className="mobile-only" style={{ maxWidth: '500px', margin: '0 auto' }}>
             {contactFormJSX}
           </div>
@@ -618,6 +714,111 @@ function ValueAdd() {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── Price List Section ──────────────────────────────────── */
+
+const PROPERTIES = [
+  { code: 'A4-1', floor: 'Ground', bedrooms: 1, interior: 44.43, terrace: 17.05, extra: 'Garden views', price: '€336,272', availability: 'Available', parking: 'Included', note: 'Local' },
+  { code: 'A7-1', floor: 'First', bedrooms: 1, interior: 53.59, terrace: 4.41, extra: 'Pool views', price: '€318,003', availability: 'Available', parking: 'Included', note: '' },
+  { code: 'A9-1', floor: 'First', bedrooms: 1, interior: 54.38, terrace: 4.41, extra: 'Pool views', price: '€318,003', availability: 'Available', parking: 'Included', note: '' },
+  { code: 'A11-1', floor: 'Second', bedrooms: 2, interior: 102.08, terrace: 71.90, extra: 'Penthouse, rooftop, sea views', price: '€641,311', availability: 'Available', parking: 'Included', note: '' },
+  { code: 'A11-2', floor: 'Second', bedrooms: 1, interior: 54.31, terrace: 6.26, extra: 'Penthouse, pool views', price: '€353,129', availability: 'Available', parking: 'Included', note: '' },
+  { code: 'B2-2', floor: 'Ground', bedrooms: 1, interior: 59.23, terrace: 9.57, extra: 'Direct pool access, Block B', price: '€392,700', availability: 'Available', parking: 'Included', note: '' },
+  { code: 'B7-1', floor: 'First', bedrooms: 1, interior: 54.41, terrace: 4.30, extra: 'Pool views', price: '€339,086', availability: 'Available', parking: 'Included', note: '' },
+  { code: 'B7-2', floor: 'First', bedrooms: 2, interior: 134.72, terrace: 48.51, extra: 'Duplex, rooftop, mountain views', price: '€691,130', availability: 'Available', parking: 'Included', note: '' },
+  { code: 'B10-1', floor: 'First', bedrooms: 1, interior: 48.40, terrace: 5.10, extra: 'Sea and pool views', price: '€348,700', availability: 'Blocked', parking: 'Included', note: '' },
+  { code: 'B11-3', floor: 'Second', bedrooms: 1, interior: 56.72, terrace: 83.57, extra: 'Penthouse with panoramic views', price: '€455,565', availability: 'Available', parking: 'Included', note: '' },
+  { code: 'C4', floor: 'First', bedrooms: 1, interior: 119.80, terrace: 84.72, extra: 'Penthouse with pool and sea views', price: '€569,580', availability: 'Available', parking: 'Included', note: 'Local' },
+  { code: 'C-5', floor: 'First', bedrooms: 1, interior: 120.19, terrace: 84.72, extra: 'Penthouse, rooftop, mountain views', price: '€569,580', availability: 'Available', parking: 'Included', note: '' },
+]
+
+function PriceList() {
+  return (
+    <section className="price-list">
+      <div className="container">
+        <div className="price-list-header">
+          <p className="value-add-subtitle">Available Properties</p>
+          <h2 className="price-list-title">Prices &amp; Availability</h2>
+          <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', fontWeight: '300' }}>
+            All properties include a parking space and storage room. Prices are subject to availability.
+          </p>
+        </div>
+
+        {/* Desktop Table */}
+        <div className="price-table-wrapper">
+          <table className="price-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Floor</th>
+                <th>Bed</th>
+                <th>Interior</th>
+                <th>Terrace</th>
+                <th>Features</th>
+                <th>Price</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PROPERTIES.map((p) => (
+                <tr key={p.code} className={p.availability === 'Blocked' ? 'row-blocked' : ''}>
+                  <td className="col-code">
+                    {p.code}
+                    {p.note === 'Local' && <span className="badge-local">+ Local</span>}
+                  </td>
+                  <td>{p.floor}</td>
+                  <td>{p.bedrooms}</td>
+                  <td>{p.interior} m²</td>
+                  <td>{p.terrace} m²</td>
+                  <td className="col-extra">{p.extra}</td>
+                  <td className="col-price">{p.price}</td>
+                  <td>
+                    <span className={`badge ${p.availability === 'Available' ? 'badge-available' : 'badge-blocked'}`}>
+                      {p.availability === 'Blocked' ? 'Reserved' : p.availability}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="price-cards">
+          {PROPERTIES.map((p) => (
+            <div key={p.code} className={`price-card ${p.availability === 'Blocked' ? 'card-blocked' : ''}`}>
+              <div className="price-card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="price-card-code">{p.code}</span>
+                  {p.note === 'Local' && <span className="badge-local">+ Local</span>}
+                  <span className={`badge ${p.availability === 'Available' ? 'badge-available' : 'badge-blocked'}`}>
+                    {p.availability === 'Blocked' ? 'Reserved' : p.availability}
+                  </span>
+                </div>
+                <span className="price-card-price">{p.price}</span>
+              </div>
+              <div className="price-card-details">
+                <span><span className="detail-label">Floor</span> {p.floor}</span>
+                <span><span className="detail-label">Bed</span> {p.bedrooms}</span>
+                <span><span className="detail-label">Interior</span> {p.interior} m²</span>
+                <span><span className="detail-label">Terrace</span> {p.terrace} m²</span>
+              </div>
+              {p.extra && <div className="price-card-extra">{p.extra}</div>}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+          <button onClick={scrollToContact} className="amoforms-action-btn" style={{
+            display: 'inline-block', width: 'auto', padding: '15px 40px', backgroundColor: 'var(--text-main)'
+          }}>
+            Check Availability
+          </button>
         </div>
       </div>
     </section>

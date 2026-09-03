@@ -47,6 +47,9 @@ export default async function handler(req, res) {
         if (data.utmContent) {
             tags.push({ "name": `Ad: ${data.utmContent}` });
         }
+        if (data.budget) {
+            tags.push({ "name": `Budget: ${data.budget}` });
+        }
 
         const kommoPayload = [
             {
@@ -119,6 +122,7 @@ export default async function handler(req, res) {
                 if (leadId && (data.travelPlan || data.source || data.utmCampaign)) {
                     const noteLines = [];
                     if (data.travelPlan) noteLines.push(`📅 Travel Plan: ${data.travelPlan}`);
+                    if (data.budget) noteLines.push(`💰 Budget: ${data.budget}`);
                     if (data.source) noteLines.push(`📣 Lead Source: ${data.source}`);
                     if (data.utmCampaign) noteLines.push(`🎯 Campaign: ${data.utmCampaign}`);
                     if (data.utmContent) noteLines.push(`📝 Ad/Creative: ${data.utmContent}`);
