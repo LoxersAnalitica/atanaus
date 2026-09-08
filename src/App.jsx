@@ -249,9 +249,8 @@ function Hero() {
 
       if (response.ok) {
         setStatus('success')
-        if (window.fbq) {
-          window.fbq('track', 'Lead');
-        }
+        // Lead event is fired server-side via Meta CAPI (api/kommo.js)
+        // Do NOT duplicate here with fbq('track', 'Lead')
       } else {
         setStatus('error')
       }
@@ -923,7 +922,7 @@ function WhatsAppButton() {
       className={`whatsapp-float ${visible ? 'visible' : ''}`}
       onClick={() => {
         if (window.fbq) {
-          window.fbq('track', 'Lead');
+          window.fbq('track', 'Contact');
         }
       }}
     >
@@ -1017,9 +1016,8 @@ function DossierModal({ isOpen, onClose }) {
 
       if (response.ok) {
         setStatus('success')
-        if (window.fbq) {
-          window.fbq('track', 'Lead');
-        }
+        // Lead event is fired server-side via Meta CAPI (api/kommo.js)
+        // Do NOT duplicate here with fbq('track', 'Lead')
         setTimeout(() => {
           onClose()
           setStatus('idle')
