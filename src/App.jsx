@@ -38,6 +38,20 @@ const CheckCircleIcon = () => (
   </svg>
 )
 
+/* ─── Dossier unlock state ───────────────────────────────── */
+
+const LAST_UPDATED = 'November 2026'
+const DOSSIER_KEY = 'atanaus-dossier-unlocked'
+
+const isDossierUnlocked = () => {
+  try { return localStorage.getItem(DOSSIER_KEY) === '1' } catch { return false }
+}
+
+const unlockDossier = () => {
+  try { localStorage.setItem(DOSSIER_KEY, '1') } catch { /* storage unavailable */ }
+  window.dispatchEvent(new Event('atanaus-dossier-unlocked'))
+}
+
 /* ─── Global Scroll to Contact Function ──────────────────────── */
 const scrollToContact = () => {
   // On mobile, scroll to the mobile form section; on desktop, scroll to the hero (where the form is)
@@ -58,11 +72,17 @@ const scrollToContact = () => {
 
 function Header({ onOpenDossier }) {
   const [scrolled, setScrolled] = useState(false)
+  const [unlocked, setUnlocked] = useState(() => isDossierUnlocked())
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50)
     window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
+    const onUnlock = () => setUnlocked(true)
+    window.addEventListener('atanaus-dossier-unlocked', onUnlock)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('atanaus-dossier-unlocked', onUnlock)
+    }
   }, [])
 
   return (
@@ -72,6 +92,30 @@ function Header({ onOpenDossier }) {
           Atanaus Suites
         </div>
         <div className="contact-nav">
+          {unlocked ? (
+            <a
+              href={DOSSIER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dossier-btn"
+              style={{
+                backgroundColor: 'var(--accent-gold)',
+                border: '1px solid var(--accent-gold)',
+                color: '#fff',
+                padding: '8px 16px',
+                borderRadius: '2px',
+                fontFamily: 'var(--font-sans)',
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                textDecoration: 'none',
+                marginRight: '10px',
+                display: 'inline-block'
+              }}
+            >
+              Download dossier
+            </a>
+          ) : (
           <button
             onClick={onOpenDossier}
             className="dossier-btn"
@@ -90,8 +134,10 @@ function Header({ onOpenDossier }) {
               cursor: 'pointer'
             }}
           >
-            Access Full Dossier (in English)
+            <span className="dossier-btn-long">Free dossier &amp; price list</span>
+            <span className="dossier-btn-short">Free dossier</span>
           </button>
+          )}
         </div>
       </div>
     </header>
@@ -172,6 +218,12 @@ const KommoStyles = () => (
   `}} />
 )
 
+const TOTAL_STEPS = 5
+const STEP_ORDER = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }
+
+const DOSSIER_URL = '/dossier-atanaus-suites.pdf'
+const WHATSAPP_URL = 'https://wa.me/34919934639?text=Hello,%20I%20would%20like%20to%20request%20information%20about%20Atanaus%20Suites.'
+
 function Hero() {
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', budget: '', travelPlan: '' })
   const [status, setStatus] = useState('idle')
@@ -249,6 +301,7 @@ function Hero() {
 
       if (response.ok) {
         setStatus('success')
+        unlockDossier()
         // Lead event is fired server-side via Meta CAPI (api/kommo.js)
         // Do NOT duplicate here with fbq('track', 'Lead')
       } else {
@@ -259,40 +312,66 @@ function Hero() {
     }
   }
 
+  const currentStepNumber = STEP_ORDER[formStep] || 2
+
   const contactFormJSX = (
     <div className="glass-box">
       <KommoStyles />
-      <h2 className="glass-box-title">Check Availability</h2>
-      <p className="glass-box-desc">Request Information</p>
 
-      <div style={{ position: 'relative', minHeight: '280px' }}>
-        <div
-          style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: status === 'success' ? 1 : 0,
-            visibility: status === 'success' ? 'visible' : 'hidden',
-            transition: 'opacity 0.8s ease'
-          }}
-        >
-          <h3 style={{
-            color: 'var(--text-main)',
-            fontFamily: 'var(--font-serif)',
-            fontSize: '1.4rem',
-            textAlign: 'center',
-            lineHeight: '1.6'
-          }}>
-            Request sent successfully.<br />We will contact you shortly.
-          </h3>
-        </div>
+      {status !== 'success' && (
+        <>
+          <h2 className="glass-box-title">Get the full price list &amp; dossier</h2>
+          <p className="glass-box-desc">
+            Instant access · {AVAILABLE_COUNT} homes available from {fmtPrice(MIN_PRICE)}
+          </p>
 
+          {formStep !== 'low-budget' && (
+            <div className="form-progress" aria-hidden="true">
+              <div className="form-progress-bar">
+                <div className="form-progress-fill" style={{ width: `${(currentStepNumber / TOTAL_STEPS) * 100}%` }}></div>
+              </div>
+              <span className="form-progress-label">Step {currentStepNumber} of {TOTAL_STEPS}</span>
+            </div>
+          )}
+        </>
+      )}
+
+      <div style={{ position: 'relative', minHeight: status === 'success' ? '0' : '280px' }}>
+        {status === 'success' && (
+          <div className="success-panel">
+            <div className="success-check">
+              <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+            </div>
+            <h3 className="success-title">
+              Thank you{formData.name ? `, ${formData.name.split(' ')[0]}` : ''}. Your dossier is unlocked.
+            </h3>
+            <p className="success-text">
+              Download the complete dossier now — floor plans, finishes and the full price list. An advisor will also contact you shortly.
+            </p>
+
+            <a
+              href={DOSSIER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="success-primary-btn"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></svg>
+              Download the dossier (PDF)
+            </a>
+
+            <button type="button" onClick={scrollToPrices} className="success-secondary-btn">
+              See the {AVAILABLE_COUNT} homes still available
+            </button>
+
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="success-whatsapp-link">
+              Or ask a question on WhatsApp
+            </a>
+          </div>
+        )}
+
+        {status !== 'success' && (
         <form
           className="amoforms-code-container"
-          style={{
-            opacity: status === 'success' ? 0 : 1,
-            visibility: status === 'success' ? 'hidden' : 'visible',
-            transition: 'opacity 0.5s ease'
-          }}
           onSubmit={handleSubmit}
         >
           {formStep === 1 && (
@@ -316,8 +395,11 @@ function Hero() {
                 }}
                 style={{ marginTop: '15px' }}
               >
-                Check Availability
+                See prices &amp; availability
               </button>
+              <p className="form-reassurance">
+                Takes 30 seconds · No obligation · Dossier delivered instantly
+              </p>
             </div>
           )}
 
@@ -326,59 +408,34 @@ function Hero() {
               <label className="amoforms-label">What is your approximate budget?</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
                 {[
-                  { value: 'Below €350,000', label: 'Below €350,000' },
-                  { value: '€350,000 - €500,000', label: '€350,000 – €500,000' },
-                  { value: 'Above €500,000', label: 'Above €500,000' }
+                  { value: 'Below €300,000', label: 'Below €300,000' },
+                  { value: '€300,000 - €400,000', label: '€300,000 – €400,000' },
+                  { value: '€400,000 - €600,000', label: '€400,000 – €600,000' },
+                  { value: 'Above €600,000', label: 'Above €600,000' }
                 ].map((option) => (
                   <label
                     key={option.value}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '14px 14px',
-                      border: formData.budget === option.value ? '2px solid #C5A880' : '1px solid rgba(0,0,0,0.1)',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      backgroundColor: formData.budget === option.value ? 'rgba(197,168,128,0.08)' : '#fff',
-                      transition: 'all 0.2s ease',
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '14px',
-                      color: '#333'
-                    }}
+                    className={`choice-tile ${formData.budget === option.value ? 'is-selected' : ''}`}
                   >
                     <input
                       type="radio"
                       name="budget"
                       value={option.value}
                       checked={formData.budget === option.value}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        handleInputChange(e)
+                        setTimeout(() => {
+                          if (e.target.value === 'Below €300,000') setFormStep('low-budget')
+                          else setFormStep(3)
+                        }, 180)
+                      }}
                       style={{ accentColor: '#C5A880', width: '18px', height: '18px' }}
                     />
                     {option.label}
                   </label>
                 ))}
               </div>
-              <button
-                type="button"
-                className="amoforms-action-btn"
-                onClick={() => {
-                  if (!formData.budget) {
-                    alert('Please select your approximate budget.')
-                    return
-                  }
-                  if (formData.budget === 'Below €350,000') {
-                    setFormStep('low-budget')
-                  } else {
-                    setFormStep(3)
-                  }
-                }}
-                style={{ marginTop: '15px', opacity: formData.budget ? 1 : 0.5 }}
-                disabled={!formData.budget}
-              >
-                Continue
-              </button>
-              <button type="button" onClick={() => setFormStep(1)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+              <button type="button" onClick={() => setFormStep(1)} className="form-back-btn">Back</button>
             </div>
           )}
 
@@ -386,58 +443,27 @@ function Hero() {
             <div className="budget-warning">
               <div className="budget-warning-icon">🏠</div>
               <h3 className="budget-warning-title">
-                We currently don't have available properties in this price range.
+                Our homes currently start at {fmtPrice(MIN_PRICE)}.
               </h3>
               <p className="budget-warning-text">
-                However, you can still reach out to us for future opportunities or alternative options.
+                Nothing is available below €300,000 right now, but we can let you know about future opportunities or alternative projects.
               </p>
               <a
-                href="https://wa.me/34919934639?text=Hello,%20I%20would%20like%20to%20request%20information%20about%20Atanaus%20Suites.%20My%20budget%20is%20below%20%E2%82%AC350,000."
+                href="https://wa.me/34919934639?text=Hello,%20I%20would%20like%20to%20request%20information%20about%20Atanaus%20Suites.%20My%20budget%20is%20below%20%E2%82%AC300,000."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="budget-warning-whatsapp"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-                Contact Us Anyway
+                <WhatsAppIcon />
+                Contact us anyway
               </a>
-              <button type="button" onClick={() => setFormStep(2)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '15px', width: '100%', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.85rem' }}>Change Budget</button>
+              <button type="button" onClick={() => setFormStep(2)} className="form-back-btn">Change budget</button>
             </div>
           )}
 
           {formStep === 3 && (
             <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
-              <label className="amoforms-label">Phone</label>
-              <div style={{ position: 'relative' }}>
-                <PhoneInput
-                  international
-                  defaultCountry="ES"
-                  value={formData.phone}
-                  onChange={handlePhoneChange}
-                  disabled={status === 'submitting'}
-                  required
-                />
-              </div>
-              <p style={{ fontSize: '0.75rem', color: '#333', marginTop: '4px', fontStyle: 'italic', lineHeight: '1.2' }}>
-                * Please provide a valid number with WhatsApp. You will receive an immediate verification message.
-              </p>
-              <button
-                type="button"
-                className="amoforms-action-btn"
-                onClick={() => {
-                  if (formData.phone && formData.phone.length > 8) setFormStep(4)
-                  else alert('Please enter a valid phone number.')
-                }}
-                style={{ marginTop: '15px' }}
-              >
-                Continue
-              </button>
-              <button type="button" onClick={() => setFormStep(2)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
-            </div>
-          )}
-
-          {formStep === 4 && (
-            <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
-              <label className="amoforms-label">Full Name</label>
+              <label className="amoforms-label">Your name</label>
               <input
                 type="text"
                 name="name"
@@ -447,23 +473,22 @@ function Hero() {
                 placeholder="Enter your full name"
                 required
               />
-
               <button
                 type="button"
                 className="amoforms-action-btn"
                 onClick={() => {
-                  if (formData.name && formData.name.trim().length > 1) setFormStep(5)
+                  if (formData.name && formData.name.trim().length > 1) setFormStep(4)
                   else alert('Please enter your full name.')
                 }}
                 style={{ marginTop: '15px' }}
               >
                 Continue
               </button>
-              <button type="button" onClick={() => setFormStep(3)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+              <button type="button" onClick={() => setFormStep(2)} className="form-back-btn">Back</button>
             </div>
           )}
 
-          {formStep === 5 && (
+          {formStep === 4 && (
             <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
               <label className="amoforms-label">When do you plan to come to Tenerife?</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
@@ -474,33 +499,43 @@ function Hero() {
                 ].map((option) => (
                   <label
                     key={option.value}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '14px 14px',
-                      border: formData.travelPlan === option.value ? '2px solid #C5A880' : '1px solid rgba(0,0,0,0.1)',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      backgroundColor: formData.travelPlan === option.value ? 'rgba(197,168,128,0.08)' : '#fff',
-                      transition: 'all 0.2s ease',
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '14px',
-                      color: '#333'
-                    }}
+                    className={`choice-tile ${formData.travelPlan === option.value ? 'is-selected' : ''}`}
                   >
                     <input
                       type="radio"
                       name="travelPlan"
                       value={option.value}
                       checked={formData.travelPlan === option.value}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        handleInputChange(e)
+                        setTimeout(() => setFormStep(5), 180)
+                      }}
                       style={{ accentColor: '#C5A880', width: '18px', height: '18px' }}
                     />
                     {option.label}
                   </label>
                 ))}
               </div>
+              <button type="button" onClick={() => setFormStep(3)} className="form-back-btn">Back</button>
+            </div>
+          )}
+
+          {formStep === 5 && (
+            <div style={{ marginBottom: '15px', animation: 'fadeIn 0.5s ease' }}>
+              <label className="amoforms-label">Last step — your phone number</label>
+              <div style={{ position: 'relative' }}>
+                <PhoneInput
+                  international
+                  defaultCountry="ES"
+                  value={formData.phone}
+                  onChange={handlePhoneChange}
+                  disabled={status === 'submitting'}
+                  required
+                />
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#333', marginTop: '4px', fontStyle: 'italic', lineHeight: '1.3' }}>
+                * Please use a number with WhatsApp. We send an immediate verification message.
+              </p>
 
               {status === 'error' && (
                 <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '15px', marginTop: '10px' }}>
@@ -508,13 +543,22 @@ function Hero() {
                 </p>
               )}
 
-              <button type="submit" className="amoforms-action-btn" disabled={status === 'submitting' || !formData.travelPlan} style={{ marginTop: '15px', opacity: formData.travelPlan ? 1 : 0.5 }}>
-                {status === 'submitting' ? 'Sending...' : 'Check Availability'}
+              <button
+                type="submit"
+                className="amoforms-action-btn"
+                disabled={status === 'submitting' || !formData.phone}
+                style={{ marginTop: '15px', opacity: formData.phone ? 1 : 0.5 }}
+              >
+                {status === 'submitting' ? 'Sending...' : 'Unlock the dossier & prices'}
               </button>
-              <button type="button" onClick={() => setFormStep(4)} style={{ background: 'none', border: 'none', color: '#666', marginTop: '10px', width: '100%', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
+              <p className="form-reassurance">
+                Your details stay private. We never share them with third parties.
+              </p>
+              <button type="button" onClick={() => setFormStep(4)} className="form-back-btn">Back</button>
             </div>
           )}
         </form>
+        )}
       </div>
     </div>
   )
@@ -522,7 +566,7 @@ function Hero() {
   return (
     <>
       <section className="hero">
-        <img src="/assets/hero-cupula.jpg" alt="Atanaus Suites Tenerife" className="hero-bg" />
+        <img src="/assets/hero-cupula.jpg" alt="Atanaus Suites rooftop terrace in Los Cristianos, Tenerife" className="hero-bg" fetchPriority="high" />
         <div className="hero-overlay" style={{ background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.45) 70%, var(--bg-dark) 100%)' }}></div>
 
         <div className="container hero-content">
@@ -543,17 +587,22 @@ function Hero() {
                 border: '1px solid var(--accent-gold)'
               }}>
                 <span style={{ display: 'inline-block', width: '8px', height: '8px', backgroundColor: '#e74c3c', borderRadius: '50%', marginRight: '8px', animation: 'pulse 2s infinite' }}></span>
-                Only 9 left
+                Only {AVAILABLE_COUNT} of {TOTAL_HOMES} homes left
               </span>
-              <h1 className="hero-h1" style={{ marginBottom: '0.5rem', lineHeight: '1.2' }}>
-                Discover Atanaus Suites in Tenerife<br />
-                <span className="text-gold" style={{ fontSize: '1.2em', fontWeight: '700', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>From 340.000 €</span>
+              <h1 className="hero-h1" style={{ marginBottom: '0.75rem', lineHeight: '1.2' }}>
+                Ready-to-move-in homes in Los Cristianos, Tenerife<br />
+                <span className="text-gold" style={{ fontSize: '1.2em', fontWeight: '700', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>From {fmtPrice(MIN_PRICE)}</span>
               </h1>
+              <ul className="hero-usp">
+                <li>600 m from the promenade · beach a short walk away</li>
+                <li>Parking space and storage room included</li>
+                <li>Renovated complex with pool, gym and gardens</li>
+              </ul>
             </div>
 
-            <div className="mobile-only" style={{ marginTop: '1rem' }}>
+            <div className="mobile-only" style={{ marginTop: '1.25rem' }}>
               <button
-                onClick={() => document.getElementById('description-prices')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={scrollToContact}
                 className="amoforms-action-btn"
                 style={{
                   display: 'inline-block',
@@ -566,7 +615,12 @@ function Hero() {
                   boxShadow: '0 8px 20px rgba(197, 168, 128, 0.4)',
                   borderRadius: '4px'
                 }}>
-                Get Prices & Floor Plans
+                Get prices &amp; dossier
+              </button>
+              <button
+                onClick={scrollToPrices}
+                className="hero-secondary-link">
+                See the {AVAILABLE_COUNT} available homes
               </button>
             </div>
           </div>
@@ -577,11 +631,13 @@ function Hero() {
         </div>
       </section>
 
-      {/* Unified Flow: Gallery immediately after Banner */}
-      <Gallery />
+      <TrustStrip />
+
+      {/* Real photos of the finished show home */}
+      <ShowHome />
 
       {/* Description Section */}
-      <section id="description-prices" style={{ backgroundColor: '#F9F8F6', padding: '5rem 1.5rem 3rem', borderTop: '1px solid var(--border-color)' }}>
+      <section id="description-prices" style={{ backgroundColor: '#F9F8F6', padding: '4rem 1.5rem 2rem', borderTop: '1px solid var(--border-color)' }}>
         <div className="container">
           <p style={{
             fontFamily: 'var(--font-sans)',
@@ -593,8 +649,8 @@ function Hero() {
             lineHeight: '1.7',
             fontWeight: '300'
           }}>
-            Your new home in the south of Tenerife, just 600 meters from the promenade.<br /><br />
-            An exclusive residential complex of 55 properties located in Los Cristianos, one of the most established and sought-after areas on the island. A unique opportunity offering the perfect combination of tranquility, strategic location, and quality of life.
+            Your new home in the south of Tenerife, just 600 metres from the promenade.<br /><br />
+            An exclusive residential complex of {TOTAL_HOMES} homes in Los Cristianos, one of the most established and sought-after areas on the island — the perfect combination of tranquility, strategic location and quality of life.
           </p>
         </div>
       </section>
@@ -603,14 +659,131 @@ function Hero() {
       <PriceList />
 
       {/* Mobile Contact Form - after price list */}
-      <section id="mobile-contact-form" style={{ backgroundColor: '#F9F8F6', padding: '4rem 1.5rem', borderTop: '1px solid var(--border-color)' }}>
+      <section id="mobile-contact-form" style={{ backgroundColor: '#F9F8F6', padding: '3rem 1.5rem 4rem', borderTop: '1px solid var(--border-color)' }}>
         <div className="container">
           <div className="mobile-only" style={{ maxWidth: '500px', margin: '0 auto' }}>
             {contactFormJSX}
           </div>
         </div>
       </section>
+
+      <Gallery />
     </>
+  )
+}
+
+/* ─── Trust Strip ────────────────────────────────────────── */
+
+function TrustStrip() {
+  const items = [
+    { value: '600 m', label: 'to the promenade' },
+    { value: '50 m', label: 'to La Pepa shopping centre' },
+    { value: '16 min', label: 'to Tenerife South airport' },
+    { value: '92/100', label: 'Walk Score — a pedestrian paradise' }
+  ]
+  return (
+    <section className="trust-strip">
+      <div className="container trust-strip-grid">
+        {items.map((i) => (
+          <div className="trust-item" key={i.label}>
+            <span className="trust-value">{i.value}</span>
+            <span className="trust-label">{i.label}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ─── Show Home (real photography) ───────────────────────── */
+
+const SHOW_HOME_PHOTOS = [
+  { src: '/assets/showhome-salon.webp', alt: 'Living room of the A11-1 show home at Atanaus Suites', caption: 'Living room' },
+  { src: '/assets/showhome-terraza.webp', alt: 'Private terrace of the A11-1 penthouse at Atanaus Suites', caption: 'Private terrace' },
+  { src: '/assets/showhome-dormitorio.webp', alt: 'Main bedroom with balcony in the A11-1 show home', caption: 'Main bedroom' },
+  { src: '/assets/showhome-cocina.webp', alt: 'Fully fitted kitchen in the A11-1 show home', caption: 'Fitted kitchen' },
+  { src: '/assets/showhome-bano.webp', alt: 'Bathroom with walk-in shower and double basin', caption: 'Bathroom' },
+  { src: '/assets/showhome-dormitorio-2.webp', alt: 'Second view of the bedroom with fitted wardrobes', caption: 'Fitted wardrobes' },
+  { src: '/assets/showhome-cocina-2.webp', alt: 'Kitchen with integrated appliances in the A11-1 show home', caption: 'Integrated appliances' },
+]
+
+function ShowHome() {
+  const [lightbox, setLightbox] = useState(null)
+
+  useEffect(() => {
+    if (lightbox === null) return
+    document.body.style.overflow = 'hidden'
+    const onKey = (e) => {
+      if (e.key === 'Escape') setLightbox(null)
+      if (e.key === 'ArrowRight') setLightbox((i) => (i + 1) % SHOW_HOME_PHOTOS.length)
+      if (e.key === 'ArrowLeft') setLightbox((i) => (i - 1 + SHOW_HOME_PHOTOS.length) % SHOW_HOME_PHOTOS.length)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [lightbox])
+
+  return (
+    <section className="showhome" id="showhome">
+      <div className="container">
+        <div className="gallery-header" style={{ marginBottom: '0.75rem' }}>
+          <p className="value-add-subtitle">Real photos — not renders</p>
+          <h2 className="gallery-title">The finished show home</h2>
+          <p className="showhome-sub">
+            Photographed at apartment <strong>A11-1</strong>, the two-bedroom penthouse. Delivered fully finished:
+            fitted kitchen with appliances, built-in wardrobes, ducted A/C and a private terrace. Available to visit.
+          </p>
+        </div>
+
+        <div className="showhome-grid">
+          {SHOW_HOME_PHOTOS.map((photo, i) => (
+            <button
+              type="button"
+              className={`showhome-item ${i === 0 ? 'showhome-item-wide' : ''}`}
+              key={photo.src}
+              onClick={() => setLightbox(i)}
+              aria-label={`Enlarge photo: ${photo.caption}`}
+            >
+              <img src={photo.src} alt={photo.alt} loading={i < 2 ? 'eager' : 'lazy'} width="1400" height="933" />
+              <span className="showhome-caption">{photo.caption}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="showhome-cta">
+          <p className="showhome-cta-text">
+            Apartment A11-1 · 102 m² interior + 72 m² terrace · {fmtPrice(674080)}
+          </p>
+          <button onClick={scrollToContact} className="amoforms-action-btn btn-inline" style={{
+            display: 'inline-block', width: 'auto', padding: '15px 40px', backgroundColor: 'var(--text-main)'
+          }}>
+            Book a viewing
+          </button>
+        </div>
+      </div>
+
+      {lightbox !== null && (
+        <div className="lightbox" onClick={() => setLightbox(null)} role="dialog" aria-modal="true">
+          <button className="lightbox-close" onClick={() => setLightbox(null)} aria-label="Close">&times;</button>
+          <button
+            className="lightbox-nav lightbox-prev"
+            onClick={(e) => { e.stopPropagation(); setLightbox((i) => (i - 1 + SHOW_HOME_PHOTOS.length) % SHOW_HOME_PHOTOS.length) }}
+            aria-label="Previous photo"
+          >&#8249;</button>
+          <figure className="lightbox-figure" onClick={(e) => e.stopPropagation()}>
+            <img src={SHOW_HOME_PHOTOS[lightbox].src} alt={SHOW_HOME_PHOTOS[lightbox].alt} />
+            <figcaption>{SHOW_HOME_PHOTOS[lightbox].caption} — {lightbox + 1}/{SHOW_HOME_PHOTOS.length}</figcaption>
+          </figure>
+          <button
+            className="lightbox-nav lightbox-next"
+            onClick={(e) => { e.stopPropagation(); setLightbox((i) => (i + 1) % SHOW_HOME_PHOTOS.length) }}
+            aria-label="Next photo"
+          >&#8250;</button>
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -706,7 +879,7 @@ function ValueAdd() {
               <img src="/assets/atanaus-map.png" alt="Atanaus Suites Location in Los Cristianos" style={{ width: '100%', maxWidth: '400px', height: 'auto', borderRadius: '4px', opacity: '0.9' }} />
             </div>
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <button onClick={scrollToContact} className="amoforms-action-btn" style={{
+              <button onClick={scrollToContact} className="amoforms-action-btn btn-inline" style={{
                 display: 'inline-block', width: 'auto', padding: '12px 30px', backgroundColor: 'var(--accent-gold)'
               }}>
                 Check Availability
@@ -721,31 +894,52 @@ function ValueAdd() {
 
 /* ─── Price List Section ──────────────────────────────────── */
 
+const TOTAL_HOMES = 55
+
 const PROPERTIES = [
-  { code: 'A4-1', floor: 'Ground', bedrooms: 1, interior: 44.43, terrace: 17.05, extra: 'Garden views', price: '€336,272', availability: 'Available', parking: 'Included', note: 'Local' },
-  { code: 'A7-1', floor: 'First', bedrooms: 1, interior: 53.59, terrace: 4.41, extra: 'Pool views', price: '€318,003', availability: 'Available', parking: 'Included', note: '' },
-  { code: 'A9-1', floor: 'First', bedrooms: 1, interior: 54.38, terrace: 4.41, extra: 'Pool views', price: '€318,003', availability: 'Available', parking: 'Included', note: '' },
-  { code: 'A11-1', floor: 'Second', bedrooms: 2, interior: 102.08, terrace: 71.90, extra: 'Penthouse, rooftop, sea views', price: '€641,311', availability: 'Available', parking: 'Included', note: '' },
-  { code: 'A11-2', floor: 'Second', bedrooms: 1, interior: 54.31, terrace: 6.26, extra: 'Penthouse, pool views', price: '€353,129', availability: 'Available', parking: 'Included', note: '' },
-  { code: 'B2-2', floor: 'Ground', bedrooms: 1, interior: 59.23, terrace: 9.57, extra: 'Direct pool access, Block B', price: '€392,700', availability: 'Available', parking: 'Included', note: '' },
-  { code: 'B7-1', floor: 'First', bedrooms: 1, interior: 54.41, terrace: 4.30, extra: 'Pool views', price: '€339,086', availability: 'Available', parking: 'Included', note: '' },
-  { code: 'B7-2', floor: 'First', bedrooms: 2, interior: 134.72, terrace: 48.51, extra: 'Duplex, rooftop, mountain views', price: '€691,130', availability: 'Available', parking: 'Included', note: '' },
-  { code: 'B10-1', floor: 'First', bedrooms: 1, interior: 48.40, terrace: 5.10, extra: 'Sea and pool views', price: '€348,700', availability: 'Blocked', parking: 'Included', note: '' },
-  { code: 'B11-3', floor: 'Second', bedrooms: 1, interior: 56.72, terrace: 83.57, extra: 'Penthouse with panoramic views', price: '€455,565', availability: 'Available', parking: 'Included', note: '' },
-  { code: 'C4', floor: 'First', bedrooms: 1, interior: 119.80, terrace: 84.72, extra: 'Penthouse with pool and sea views', price: '€569,580', availability: 'Available', parking: 'Included', note: 'Local' },
-  { code: 'C-5', floor: 'First', bedrooms: 1, interior: 120.19, terrace: 84.72, extra: 'Penthouse, rooftop, mountain views', price: '€569,580', availability: 'Available', parking: 'Included', note: '' },
+  { code: 'B7-1',  floor: 'First',  bedrooms: 1, interior: 54.41,  terrace: 4.30,  extra: 'Pool views', price: 339086, availability: 'Available', note: '' },
+  { code: 'A7-1',  floor: 'First',  bedrooms: 1, interior: 53.59,  terrace: 4.41,  extra: 'Pool views', price: 340186, availability: 'Available', note: '' },
+  { code: 'A9-1',  floor: 'First',  bedrooms: 1, interior: 54.38,  terrace: 4.41,  extra: 'Pool views', price: 340186, availability: 'Available', note: '' },
+  { code: 'A4-1',  floor: 'Ground', bedrooms: 1, interior: 44.43,  terrace: 17.05, extra: 'Extra-large terrace, garden views', price: 359713, availability: 'Available', note: 'Local' },
+  { code: 'A11-2', floor: 'Second', bedrooms: 1, interior: 54.31,  terrace: 6.26,  extra: 'Top floor, pool views', price: 377819, availability: 'Reserved', note: '' },
+  { code: 'B2-2',  floor: 'Ground', bedrooms: 1, interior: 59.23,  terrace: 9.57,  extra: 'Direct pool access from the terrace', price: 392700, availability: 'Available', note: '' },
+  { code: 'B11-3', floor: 'Second', bedrooms: 1, interior: 56.72,  terrace: 83.57, extra: 'Penthouse · panoramic solarium', price: 455565, availability: 'Available', note: '' },
+  { code: 'C4',    floor: 'First',  bedrooms: 1, interior: 119.80, terrace: 84.72, extra: 'Penthouse · pool and sea views', price: 569580, availability: 'Available', note: 'Local' },
+  { code: 'C5',    floor: 'First',  bedrooms: 1, interior: 120.19, terrace: 84.72, extra: 'Penthouse · private rooftop solarium', price: 569580, availability: 'Available', note: '' },
+  { code: 'A11-1', floor: 'Second', bedrooms: 2, interior: 102.08, terrace: 71.90, extra: 'Penthouse · rooftop · sea views', price: 674080, availability: 'Available', note: 'Show home' },
+  { code: 'B7-2',  floor: 'First',  bedrooms: 2, interior: 134.72, terrace: 48.51, extra: 'Duplex · rooftop solarium · mountain views', price: 691130, availability: 'Available', note: '' },
 ]
+
+const AVAILABLE_HOMES = PROPERTIES.filter((p) => p.availability === 'Available')
+const AVAILABLE_COUNT = AVAILABLE_HOMES.length
+const MIN_PRICE = Math.min(...AVAILABLE_HOMES.map((p) => p.price))
+const SOLD_COUNT = TOTAL_HOMES - PROPERTIES.length
+const fmtPrice = (n) => '\u20AC' + n.toLocaleString('en-US')
+
+const scrollToPrices = () => {
+  document.getElementById('prices')?.scrollIntoView({ behavior: 'smooth' })
+}
 
 function PriceList() {
   return (
-    <section className="price-list">
+    <section className="price-list" id="prices">
       <div className="container">
         <div className="price-list-header">
-          <p className="value-add-subtitle">Available Properties</p>
+          <p className="value-add-subtitle">Live Availability</p>
           <h2 className="price-list-title">Prices &amp; Availability</h2>
           <p style={{ fontFamily: 'var(--font-sans)', color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', fontWeight: '300' }}>
-            All properties include a parking space and storage room. Prices are subject to availability.
+            Every home includes a parking space and a storage room. Updated {LAST_UPDATED}.
           </p>
+        </div>
+
+        <div className="sold-bar-wrap">
+          <div className="sold-bar-labels">
+            <span><strong>{SOLD_COUNT}</strong> of {TOTAL_HOMES} homes already sold</span>
+            <span className="sold-bar-left">{AVAILABLE_COUNT} left</span>
+          </div>
+          <div className="sold-bar">
+            <div className="sold-bar-fill" style={{ width: `${Math.round((SOLD_COUNT / TOTAL_HOMES) * 100)}%` }}></div>
+          </div>
         </div>
 
         {/* Desktop Table */}
@@ -765,20 +959,20 @@ function PriceList() {
             </thead>
             <tbody>
               {PROPERTIES.map((p) => (
-                <tr key={p.code} className={p.availability === 'Blocked' ? 'row-blocked' : ''}>
+                <tr key={p.code} className={p.availability !== 'Available' ? 'row-blocked' : ''}>
                   <td className="col-code">
                     {p.code}
-                    {p.note === 'Local' && <span className="badge-local">+ Local</span>}
+                    {p.note && <span className="badge-local">{p.note === 'Local' ? '+ Local' : p.note}</span>}
                   </td>
                   <td>{p.floor}</td>
                   <td>{p.bedrooms}</td>
                   <td>{p.interior} m²</td>
                   <td>{p.terrace} m²</td>
                   <td className="col-extra">{p.extra}</td>
-                  <td className="col-price">{p.price}</td>
+                  <td className="col-price">{fmtPrice(p.price)}</td>
                   <td>
                     <span className={`badge ${p.availability === 'Available' ? 'badge-available' : 'badge-blocked'}`}>
-                      {p.availability === 'Blocked' ? 'Reserved' : p.availability}
+                      {p.availability}
                     </span>
                   </td>
                 </tr>
@@ -790,16 +984,16 @@ function PriceList() {
         {/* Mobile Cards */}
         <div className="price-cards">
           {PROPERTIES.map((p) => (
-            <div key={p.code} className={`price-card ${p.availability === 'Blocked' ? 'card-blocked' : ''}`}>
+            <div key={p.code} className={`price-card ${p.availability !== 'Available' ? 'card-blocked' : ''}`}>
               <div className="price-card-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span className="price-card-code">{p.code}</span>
-                  {p.note === 'Local' && <span className="badge-local">+ Local</span>}
+                  {p.note && <span className="badge-local">{p.note === 'Local' ? '+ Local' : p.note}</span>}
                   <span className={`badge ${p.availability === 'Available' ? 'badge-available' : 'badge-blocked'}`}>
-                    {p.availability === 'Blocked' ? 'Reserved' : p.availability}
+                    {p.availability}
                   </span>
                 </div>
-                <span className="price-card-price">{p.price}</span>
+                <span className="price-card-price">{fmtPrice(p.price)}</span>
               </div>
               <div className="price-card-details">
                 <span><span className="detail-label">Floor</span> {p.floor}</span>
@@ -813,7 +1007,7 @@ function PriceList() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <button onClick={scrollToContact} className="amoforms-action-btn" style={{
+          <button onClick={scrollToContact} className="amoforms-action-btn btn-inline" style={{
             display: 'inline-block', width: 'auto', padding: '15px 40px', backgroundColor: 'var(--text-main)'
           }}>
             Check Availability
@@ -831,37 +1025,38 @@ function Gallery() {
     <section className="gallery">
       <div className="container">
         <div className="gallery-header" style={{ marginBottom: '2rem' }}>
-          <p className="value-add-subtitle">Gallery</p>
-          <h2 className="gallery-title">Discover the Coastal Lifestyle</h2>
+          <p className="value-add-subtitle">Other layouts</p>
+          <h2 className="gallery-title">Discover the coastal lifestyle</h2>
+          <p className="showhome-sub">Computer-generated images of other home types in the complex.</p>
         </div>
         <div className="gallery-grid">
           <div className="gallery-item">
-            <img src="/assets/media__1773763542250.jpg" alt="Interior Living and Dining Area" />
+            <img loading="lazy" src="/assets/media__1773763542250.jpg" alt="Interior Living and Dining Area" />
             <div className="gallery-item-caption">Open-plan Living Areas</div>
           </div>
           <div className="gallery-item">
-            <img src="/assets/media__1773763542263.jpg" alt="Bright Master Bedroom" />
+            <img loading="lazy" src="/assets/media__1773763542263.jpg" alt="Bright Master Bedroom" />
             <div className="gallery-item-caption">Bright & Restful Bedrooms</div>
           </div>
           <div className="gallery-item">
-            <img src="/assets/media__1773763542331.jpg" alt="Functional Coastal Design" />
+            <img loading="lazy" src="/assets/media__1773763542331.jpg" alt="Functional Coastal Design" />
             <div className="gallery-item-caption">Functional Coastal Design</div>
           </div>
           <div className="gallery-item">
-            <img src="/assets/media__1773763542306.jpg" alt="Equipped Modern Kitchen" />
+            <img loading="lazy" src="/assets/media__1773763542306.jpg" alt="Equipped Modern Kitchen" />
             <div className="gallery-item-caption">Fully Equipped Modern Kitchens</div>
           </div>
           <div className="gallery-item">
-            <img src="/assets/media__1773853074127.jpg" alt="Spacious private terraces with pergola" />
+            <img loading="lazy" src="/assets/media__1773853074127.jpg" alt="Spacious private terraces with pergola" />
             <div className="gallery-item-caption">Beautiful Private Terraces</div>
           </div>
           <div className="gallery-item">
-            <img src="/assets/media__1773853074125.jpg" alt="Cozy outdoor dining area" />
+            <img loading="lazy" src="/assets/media__1773853074125.jpg" alt="Cozy outdoor dining area" />
             <div className="gallery-item-caption">Outdoor Dining Areas</div>
           </div>
         </div>
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <button onClick={scrollToContact} className="amoforms-action-btn" style={{
+          <button onClick={scrollToContact} className="amoforms-action-btn btn-inline" style={{
             display: 'inline-block', width: 'auto', padding: '15px 40px', backgroundColor: 'var(--text-main)'
           }}>
             Check Availability
@@ -869,6 +1064,107 @@ function Gallery() {
         </div>
       </div>
     </section>
+  )
+}
+
+/* ─── FAQ Section ────────────────────────────────────────── */
+
+const FAQS = [
+  {
+    q: 'Are the homes ready to move into?',
+    a: 'Yes. The complex has been fully renovated and the homes are delivered finished — fitted kitchen with appliances, built-in wardrobes, ducted air conditioning, and a finished bathroom. The A11-1 show home can be visited in person.'
+  },
+  {
+    q: 'What is included in the price?',
+    a: 'Each home includes a storage room and a parking space in the underground garage, plus access to the pool, solarium, gym and landscaped gardens. Taxes and purchase costs are additional — your advisor will send you an exact breakdown for the home you choose.'
+  },
+  {
+    q: 'Can I buy if I do not live in Spain?',
+    a: 'Yes. Non-residents buy here regularly. You will need a Spanish NIE number and a Spanish bank account, and we guide you through both. Much of the process can be handled remotely with a power of attorney.'
+  },
+  {
+    q: 'Can I rent the property out when I am not using it?',
+    a: 'Los Cristianos is one of the most established tourist areas in the south of Tenerife and rental demand is high year-round. We can talk you through the current letting options and the rules that apply to this complex.'
+  },
+  {
+    q: 'Can I visit before deciding?',
+    a: 'Yes — viewings of the show home are available most days. If you are not on the island yet, we can run a live video tour and send you the floor plans and full dossier first.'
+  },
+  {
+    q: 'How does the reservation process work?',
+    a: 'A home is taken off the market with a reservation deposit, followed by a private purchase contract and then completion at the notary. Your advisor will walk you through each step and the timings before you commit to anything.'
+  }
+]
+
+function FAQ() {
+  const [open, setOpen] = useState(0)
+  return (
+    <section className="faq" id="faq">
+      <div className="container">
+        <div className="price-list-header">
+          <p className="value-add-subtitle">Good to know</p>
+          <h2 className="price-list-title">Frequently asked questions</h2>
+        </div>
+        <div className="faq-list">
+          {FAQS.map((item, i) => (
+            <div className={`faq-item ${open === i ? 'is-open' : ''}`} key={item.q}>
+              <button
+                type="button"
+                className="faq-q"
+                onClick={() => setOpen(open === i ? -1 : i)}
+                aria-expanded={open === i}
+              >
+                <span>{item.q}</span>
+                <span className="faq-icon">{open === i ? '−' : '+'}</span>
+              </button>
+              {open === i && <div className="faq-a">{item.a}</div>}
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
+          <button onClick={scrollToContact} className="amoforms-action-btn btn-inline" style={{
+            display: 'inline-block', width: 'auto', padding: '15px 40px', backgroundColor: 'var(--text-main)'
+          }}>
+            Get prices &amp; dossier
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── Sticky mobile CTA bar ──────────────────────────────── */
+
+function MobileCTABar() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 400)
+    window.addEventListener('scroll', onScroll)
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <div className={`mobile-cta-bar ${visible ? 'visible' : ''}`}>
+      <button onClick={scrollToContact} className="mobile-cta-main">
+        Get prices &amp; dossier
+      </button>
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Contact via WhatsApp"
+        className="mobile-cta-wa"
+        onClick={() => {
+          if (window.fbq) {
+            window.fbq('track', 'Contact');
+          }
+        }}
+      >
+        <WhatsAppIcon />
+      </a>
+    </div>
   )
 }
 
@@ -1016,12 +1312,9 @@ function DossierModal({ isOpen, onClose }) {
 
       if (response.ok) {
         setStatus('success')
+        unlockDossier()
         // Lead event is fired server-side via Meta CAPI (api/kommo.js)
         // Do NOT duplicate here with fbq('track', 'Lead')
-        setTimeout(() => {
-          onClose()
-          setStatus('idle')
-        }, 3000)
       } else {
         setStatus('error')
       }
@@ -1048,17 +1341,29 @@ function DossierModal({ isOpen, onClose }) {
           &times;
         </button>
         <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', color: 'var(--text-main)', marginBottom: '10px', textAlign: 'center' }}>
-          Access the Full Dossier
+          {status === 'success' ? 'Your dossier is ready' : 'Get the full dossier'}
         </h3>
-        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.95rem', color: 'var(--text-muted)', marginBottom: '25px', textAlign: 'center' }}>
-          Please enter your details to receive the complete Atanaus Suites dossier.
-        </p>
+        {status !== 'success' && (
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.95rem', color: 'var(--text-muted)', marginBottom: '25px', textAlign: 'center' }}>
+            Floor plans, finishes and the full price list — {AVAILABLE_COUNT} homes available from {fmtPrice(MIN_PRICE)}. Instant download.
+          </p>
+        )}
 
         {status === 'success' ? (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <p style={{ color: 'var(--accent-gold)', fontSize: '1.2rem', fontFamily: 'var(--font-serif)' }}>
-              Request sent successfully.<br />Check your inbox shortly.
+          <div className="success-panel">
+            <div className="success-check">
+              <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+            </div>
+            <p className="success-text">
+              Download it now — an advisor will also be in touch shortly.
             </p>
+            <a href={DOSSIER_URL} target="_blank" rel="noopener noreferrer" className="success-primary-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></svg>
+              Download the dossier (PDF)
+            </a>
+            <button type="button" className="success-secondary-btn" onClick={() => { onClose(); setTimeout(scrollToPrices, 300) }}>
+              See the {AVAILABLE_COUNT} homes still available
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
@@ -1111,7 +1416,7 @@ function DossierModal({ isOpen, onClose }) {
                 transition: 'background-color 0.3s'
               }}
             >
-              {status === 'submitting' ? 'Sending...' : 'Get Dossier'}
+              {status === 'submitting' ? 'Sending...' : 'Get the dossier now'}
             </button>
           </form>
         )}
@@ -1171,16 +1476,18 @@ export default function App() {
         buttonStyle={{ backgroundColor: "#C5A880", color: "#fff", fontSize: "12px", borderRadius: "2px", fontWeight: "bold", textTransform: "uppercase", padding: "10px 20px" }}
         expires={150}
       >
-        We use cookies to enhance your browsing experience, serve personalized ads or content, and analyze our traffic. By clicking "I Understand", you consent to our use of cookies.
+        We use cookies to improve your experience and measure our advertising. By clicking "I Understand" you consent to our use of cookies.
       </CookieConsent>
       <Header onOpenDossier={() => setIsDossierOpen(true)} />
       <main>
         <Hero />
         <Benefits />
         <ValueAdd />
+        <FAQ />
       </main>
       <Footer />
       <WhatsAppButton />
+      <MobileCTABar />
       <DossierModal isOpen={isDossierOpen} onClose={() => setIsDossierOpen(false)} />
     </>
   )
