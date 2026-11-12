@@ -408,8 +408,8 @@ function Hero() {
               <label className="amoforms-label">What is your approximate budget?</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
                 {[
-                  { value: 'Below €300,000', label: 'Below €300,000' },
-                  { value: '€300,000 - €400,000', label: '€300,000 – €400,000' },
+                  { value: 'Below €250,000', label: 'Below €250,000' },
+                  { value: '€250,000 - €400,000', label: '€250,000 – €400,000' },
                   { value: '€400,000 - €600,000', label: '€400,000 – €600,000' },
                   { value: 'Above €600,000', label: 'Above €600,000' }
                 ].map((option) => (
@@ -425,7 +425,7 @@ function Hero() {
                       onChange={(e) => {
                         handleInputChange(e)
                         setTimeout(() => {
-                          if (e.target.value === 'Below €300,000') setFormStep('low-budget')
+                          if (e.target.value === 'Below €250,000') setFormStep('low-budget')
                           else setFormStep(3)
                         }, 180)
                       }}
@@ -446,10 +446,10 @@ function Hero() {
                 Our homes currently start at {fmtPrice(MIN_PRICE)}.
               </h3>
               <p className="budget-warning-text">
-                Nothing is available below €300,000 right now, but we can let you know about future opportunities or alternative projects.
+                Nothing is available below €250,000 right now, but we can let you know about future opportunities or alternative projects.
               </p>
               <a
-                href="https://wa.me/34919934639?text=Hello,%20I%20would%20like%20to%20request%20information%20about%20Atanaus%20Suites.%20My%20budget%20is%20below%20%E2%82%AC300,000."
+                href="https://wa.me/34919934639?text=Hello,%20I%20would%20like%20to%20request%20information%20about%20Atanaus%20Suites.%20My%20budget%20is%20below%20%E2%82%AC250,000."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="budget-warning-whatsapp"
@@ -897,8 +897,8 @@ function ValueAdd() {
 const TOTAL_HOMES = 55
 
 const PROPERTIES = [
+  { code: 'A7-1',  floor: 'First',  bedrooms: 1, interior: 53.59,  terrace: 4.41,  extra: 'Pool views', price: 299000, availability: 'Available', note: 'Best price' },
   { code: 'B7-1',  floor: 'First',  bedrooms: 1, interior: 54.41,  terrace: 4.30,  extra: 'Pool views', price: 339086, availability: 'Available', note: '' },
-  { code: 'A7-1',  floor: 'First',  bedrooms: 1, interior: 53.59,  terrace: 4.41,  extra: 'Pool views', price: 340186, availability: 'Available', note: '' },
   { code: 'A9-1',  floor: 'First',  bedrooms: 1, interior: 54.38,  terrace: 4.41,  extra: 'Pool views', price: 340186, availability: 'Available', note: '' },
   { code: 'A4-1',  floor: 'Ground', bedrooms: 1, interior: 44.43,  terrace: 17.05, extra: 'Extra-large terrace, garden views', price: 359713, availability: 'Available', note: 'Local' },
   { code: 'A11-2', floor: 'Second', bedrooms: 1, interior: 54.31,  terrace: 6.26,  extra: 'Top floor, pool views', price: 377819, availability: 'Reserved', note: '' },
